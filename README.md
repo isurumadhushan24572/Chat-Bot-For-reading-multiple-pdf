@@ -34,12 +34,12 @@ An intelligent chatbot that extracts instructions from multiple PDF files and pr
 create Virtual env
 
   ```
-  python -m venv chatbot-env
+  python -m venv venv
   ```
 activate Virtual env
 
   ```
-  cd chatbot-env\Scripts\activate
+  cd venv\Scripts\activate
   ```
 creating .gitignore file , .env file and chatbot.py
 
@@ -60,7 +60,7 @@ Save OpenAI API Key inside .env file
 Run Chatbot.py file
 
   ```
-  streamlit run Chatbot.py
+  streamlit run app.py
   ```
 
 
