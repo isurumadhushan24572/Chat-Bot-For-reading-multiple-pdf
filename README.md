@@ -49,7 +49,7 @@ creating .gitignore file , .env file and chatbot.py
 Insatalling Required dependencies
 
   ```
-  pip install -r requirements.txt
+  pip install -r requirement.txt
   ```
 
 Save OpenAI API Key inside .env file
