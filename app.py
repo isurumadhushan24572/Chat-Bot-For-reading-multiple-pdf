@@ -27,8 +27,8 @@ def get_pdf_text(pdf_docs):
 # Function to split the extracted text into chunks
 def get_chunks(text):
     text_splitter = CharacterTextSplitter(
-        separator="\n\n",
-        chunk_size=500,
+        separator="\n",
+        chunk_size=1000,
         chunk_overlap=100,
         length_function=len
     )
@@ -50,13 +50,13 @@ def get_vector_store(text_chunks):
 # Function to create a conversational chain
 def get_conversation_chain(vector_store):
 
-    llm = ChatOpenAI( temperature=0.5)           # Define llm model
+    llm = ChatOpenAI(temperature=0.5)           # Define llm model
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
     conversation_chain = ConversationalRetrievalChain.from_llm(
         llm=llm,
-        retriever=vector_store.as_retriever(),
-        memory=memory
+        retriever=vector_store.as_retriever(),   # Convert vector_store as retriever
+        memory=memory                            # give the chat history to the conversation_chain
     )
     return conversation_chain
 
@@ -85,7 +85,7 @@ def main():
     # Sidebar for file upload and processing
     with st.sidebar:
         st.subheader("Your Documents")
-        pdf_docs = st.file_uploader("Upload your PDF", accept_multiple_files=True)  # Allow multiple PDF files to be uploaded
+        pdf_docs = st.file_uploader("Upload your PDF Files", accept_multiple_files=True)  # Allow multiple PDF files to be uploaded
         if st.button("Process Files"):
             with st.spinner("Processing..."):      # Show spinner while processing
                 # Extract text from uploaded PDFs
@@ -93,7 +93,7 @@ def main():
                 # st.write(raw_text)
 
                 # Split text into chunks
-                text_chunks = get_chunks(raw_text)
+                text_chunks = get_chunks(raw_text) 
 
                 # Create vector store from text chunks
                 vector_store = get_vector_store(text_chunks)
