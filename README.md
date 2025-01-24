@@ -29,4 +29,38 @@ An intelligent chatbot that extracts instructions from multiple PDF files and pr
 
 ---
 
+## Steps Should Follow
+
+create Virtual env
+
+  ```
+  python -m venv chatbot-env
+  ```
+activate Virtual env
+
+  ```
+  cd chatbot-env\Scripts\activate
+  ```
+creating .gitignore file , .env file and chatbot.py
+
+  ```
+  echo "# Files to ignore" > .gitignore && echo "OPENAI_API_KEY=your_api_key_here" > .env && echo "# Chatbot script" > chatbot.py
+  ```
+Insatalling Required dependencies
+
+  ```
+  pip install -r requirements.txt
+  ```
+
+Save OpenAI API Key inside .env file
+  ```
+  OPENAI_API_KEY=your_openai_api_key
+  ```
+
+Run Chatbot.py file
+
+  ```
+  streamlit run Chatbot.py
+  ```
+
 
