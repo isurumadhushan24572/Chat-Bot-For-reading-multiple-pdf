@@ -100,7 +100,7 @@ def main():
 
                 # Create conversation chain and store it in session state
                 st.session_state.conversation = get_conversation_chain(vector_store)
-                st.success("Documents processed successfully!")
+                 
 
     # User question input and response display
     user_question = st.text_input("Enter your question here")  # User input
