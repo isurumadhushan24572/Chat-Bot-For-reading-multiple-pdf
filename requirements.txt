@@ -6,4 +6,4 @@ openai
 huggingface_hub
 torch
 langchain-community
-
+sentence-transformers
