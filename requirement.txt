@@ -4,3 +4,5 @@ pypdf2
 langchain
 openai
 huggingface_hub
+torch
+
