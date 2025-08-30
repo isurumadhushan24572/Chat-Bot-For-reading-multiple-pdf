@@ -1,4 +1,4 @@
-import torch                                    # PyTorch for GPU support
+# import torch                                    # PyTorch for GPU support
 import streamlit as st                          # Develop the GUI
 from dotenv import load_dotenv                  # Load environment variables
 from PyPDF2 import PdfReader                    # Read PDF files
@@ -8,7 +8,6 @@ from langchain_community.embeddings import HuggingFaceEmbeddings # Embeddings
 from langchain.memory import ConversationBufferMemory            # Memory for chat
 from langchain.chains import ConversationalRetrievalChain        # Conversational chain
 from langchain.chat_models import ChatOpenAI                     # OpenAI GPT models
-from langchain_groq import ChatGroq 
 
 
 # Set page configuration
@@ -39,10 +38,10 @@ def get_chunks(text):
 
 # Function to create a vector store from text chunks
 def get_vector_store(text_chunks):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")   # Use GPU if available
+    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")   # Use GPU if available
     embeddings = HuggingFaceEmbeddings(                                     # Use Hugging Face embeddings
         model_name="sentence-transformers/all-MiniLM-L6-v2",
-        model_kwargs={"device": device}
+        # model_kwargs={"device": device}
     )
     vector_store = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
     return vector_store
@@ -51,11 +50,7 @@ def get_vector_store(text_chunks):
 # Function to create a conversational chain
 def get_conversation_chain(vector_store):
 
-    # Intialize LLMS
-
-    # llm = ChatOpenAI(model = "gpt-3.5-turbo", temperature = 0) 
-    llm = ChatGroq(model="llama3-8b-8192",temperature = 0)
-    # llm = ChatOpenAI(temperature=0.5)           # Define llm model
+    llm = ChatOpenAI(temperature=0.5)           # Define llm model
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
     conversation_chain = ConversationalRetrievalChain.from_llm(
@@ -105,7 +100,7 @@ def main():
 
                 # Create conversation chain and store it in session state
                 st.session_state.conversation = get_conversation_chain(vector_store)
-                st.success("Documents processed successfully!")
+                 
 
     # User question input and response display
     user_question = st.text_input("Enter your question here")  # User input
