@@ -10,3 +10,4 @@ torchaudio
 langchain_community
 sentence-transformers
 faiss-cpu
+langchain-groq

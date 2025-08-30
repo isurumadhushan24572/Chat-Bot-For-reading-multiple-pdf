@@ -8,6 +8,7 @@ from langchain_community.embeddings import HuggingFaceEmbeddings # Embeddings
 from langchain.memory import ConversationBufferMemory            # Memory for chat
 from langchain.chains import ConversationalRetrievalChain        # Conversational chain
 from langchain.chat_models import ChatOpenAI                     # OpenAI GPT models
+from langchain_groq import ChatGroq 
 
 
 # Set page configuration
@@ -50,7 +51,11 @@ def get_vector_store(text_chunks):
 # Function to create a conversational chain
 def get_conversation_chain(vector_store):
 
-    llm = ChatOpenAI(temperature=0.5)           # Define llm model
+    # Intialize LLMS
+
+    # llm = ChatOpenAI(model = "gpt-3.5-turbo", temperature = 0) 
+    llm = ChatGroq(model="llama3-8b-8192",temperature = 0)
+    # llm = ChatOpenAI(temperature=0.5)           # Define llm model
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
     conversation_chain = ConversationalRetrievalChain.from_llm(
