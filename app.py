@@ -1,4 +1,4 @@
-# import torch                                    # PyTorch for GPU support
+import torch                                    # PyTorch for GPU support
 import streamlit as st                          # Develop the GUI
 from dotenv import load_dotenv                  # Load environment variables
 from PyPDF2 import PdfReader                    # Read PDF files
@@ -8,6 +8,7 @@ from langchain_community.embeddings import HuggingFaceEmbeddings # Embeddings
 from langchain.memory import ConversationBufferMemory            # Memory for chat
 from langchain.chains import ConversationalRetrievalChain        # Conversational chain
 from langchain.chat_models import ChatOpenAI                     # OpenAI GPT models
+from langchain_groq import ChatGroq                              # Groq LLM model
 
 
 # Set page configuration
@@ -27,10 +28,10 @@ def get_pdf_text(pdf_docs):
 # Function to split the extracted text into chunks
 def get_chunks(text):
     text_splitter = CharacterTextSplitter(
-        separator="\n",
-        chunk_size=1000,
-        chunk_overlap=100,
-        length_function=len
+        separator="\n",     # Split text primarily at newline characters
+        chunk_size=1000,    # Each chunk max length = 1000 characters
+        chunk_overlap=100,  # Consecutive chunks overlap by 100 characters
+        length_function=len # Use len() to measure text length
     )
     chunks = text_splitter.split_text(text)
     return chunks
@@ -38,10 +39,10 @@ def get_chunks(text):
 
 # Function to create a vector store from text chunks
 def get_vector_store(text_chunks):
-    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")   # Use GPU if available
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")   # Use GPU if available
     embeddings = HuggingFaceEmbeddings(                                     # Use Hugging Face embeddings
-        model_name="sentence-transformers/all-MiniLM-L6-v2",
-        # model_kwargs={"device": device}
+        model_name="sentence-transformers/all-MiniLM-L6-v2",                # Embedding model
+        model_kwargs={"device": device}                                     # Pass device to model
     )
     vector_store = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
     return vector_store
@@ -50,7 +51,11 @@ def get_vector_store(text_chunks):
 # Function to create a conversational chain
 def get_conversation_chain(vector_store):
 
-    llm = ChatOpenAI(temperature=0.5)           # Define llm model
+    # Intialize LLMS
+
+    # llm = ChatOpenAI(model = "gpt-3.5-turbo", temperature = 0) 
+    llm = ChatGroq(model="llama3-8b-8192",temperature = 0)  # Define llm model
+    # llm = ChatOpenAI(temperature=0.5)           # Define llm model
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
     conversation_chain = ConversationalRetrievalChain.from_llm(
@@ -100,14 +105,14 @@ def main():
 
                 # Create conversation chain and store it in session state
                 st.session_state.conversation = get_conversation_chain(vector_store)
-                 
+                st.success("Documents processed successfully!")
 
     # User question input and response display
     user_question = st.text_input("Enter your question here")  # User input
     if user_question and st.session_state.conversation:
         with st.spinner("Fetching response..."):
             response = handle_user_input(user_question)
-            st.write(f"**Answer:** {response}")
+            st.write(f"*Answer:* {response}")
 
 
 # Run the app
