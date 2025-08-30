@@ -1,6 +1,0 @@
-streamlit
-python-dotenv
-pypdf2
-langchain
-openai
-huggingface_hub
