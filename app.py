@@ -65,7 +65,11 @@ def get_conversation_chain(vector_store):
     Input: FAISS vector store
     Output: ConversationalRetrievalChain object
     """
-    llm = ChatGroq(model="llama3-8b-8192", temperature=0)  # Deterministic output
+    # Intialize LLMS 
+    # llm = ChatOpenAI(model = "gpt-3.5-turbo", temperature = 0) 
+    # Define llm model # llm = ChatOpenAI(temperature=0.5) # Define llm model
+    llm = ChatGroq(model="llama3-8b-8192",temperature = 0) 
+
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
     return ConversationalRetrievalChain.from_llm(
         llm=llm,
@@ -148,7 +152,7 @@ def main():
     - Main column for Q&A
     """
     load_dotenv()  # Load .env variables
-    st.set_page_config(page_title="📚 Chat Bot PDF Reader", page_icon="📚", layout="wide")
+    st.set_page_config(page_title="Chat Bot PDF Reader", page_icon="📚", layout="wide")
 
     # Header with styling
     st.markdown(
