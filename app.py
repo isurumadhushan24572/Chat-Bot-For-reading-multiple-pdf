@@ -11,10 +11,11 @@ from langchain_groq import ChatGroq                              # Groq LLM mode
 from langchain.chat_models import ChatOpenAI                     # OpenAI GPT models
 from gtts import gTTS                                            # Google Text-to-Speech for voice output
 import tempfile                                                  # Save temporary audio files for playback
-from langchain.prompts import ChatPromptTemplate                 # Custom chat prompts
+
 
 
 # ===================== PDF PROCESSING FUNCTIONS =====================
+# Functions to read PDF, split text, and create vector embeddings
 
 def get_pdf_text(pdf_docs):
     """Extract text from all uploaded PDF files."""
@@ -22,7 +23,7 @@ def get_pdf_text(pdf_docs):
     for pdf in pdf_docs:
         pdf_doc = PdfReader(pdf)  
         for page in pdf_doc.pages:  
-            raw_text += page.extract_text() or ""  
+            raw_text += page.extract_text() or ""  # Add text from each page
     return raw_text          
 
 
@@ -30,8 +31,8 @@ def get_chunks(text):
     """Split extracted text into manageable overlapping chunks."""
     text_splitter = CharacterTextSplitter(
         separator="\n",
-        chunk_size=1000,
-        chunk_overlap=100,
+        chunk_size=1000,  # Maximum characters per chunk
+        chunk_overlap=100, # Overlap between chunks for better context
         length_function=len
     )
     return text_splitter.split_text(text)
@@ -39,30 +40,32 @@ def get_chunks(text):
 
 def get_vector_store(text_chunks):
     """Convert text chunks to embeddings and store in FAISS vector store."""
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # Use GPU if available
     embeddings = HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2",
-        model_kwargs={"device": device}
+        model_kwargs={"device": device}  # Pass device to model
     )
-    return FAISS.from_texts(texts=text_chunks, embedding=embeddings)
+    return FAISS.from_texts(texts=text_chunks, embedding=embeddings)  # Build FAISS vector DB
 
 
 # ===================== CONVERSATION CHAIN =====================
-
+# Function to create the retrieval-based chat chain
 
 def get_conversation_chain(vector_store):
     """Build a conversational retrieval chain using Groq LLM (or OpenAI)."""
     llm_1 = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)  # OpenAI option
     # llm = ChatGroq(model="llama-3.1-8b-instant",temperature = 0)    # Define llm model
 
-    memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+    memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)  # Save chat history
     return ConversationalRetrievalChain.from_llm(
         llm=llm_1,
-        retriever=vector_store.as_retriever(),
+        retriever=vector_store.as_retriever(),  # Connect vector store as retriever
         memory=memory
     )
 
+
 # ===================== VOICE FUNCTIONS =====================
+# Functions for text-to-speech in English and Sinhala
 
 def translate_to_sinhala_with_gpt(answer: str) -> str:
     """Use OpenAI GPT model for Sinhala translation."""
@@ -84,20 +87,20 @@ def translate_to_sinhala_with_gpt(answer: str) -> str:
 def speak_english(answer):
     """English text + voice only."""
     try:
-        tts = gTTS(text=answer, lang="en", slow=False)   
+        tts = gTTS(text=answer, lang="en", slow=False)   # Convert text to speech
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_file:
-            tts.save(tmp_file.name)
-            st.audio(tmp_file.name, format="audio/mp3")
+            tts.save(tmp_file.name)                      # Save audio to temporary file
+            st.audio(tmp_file.name, format="audio/mp3")  # Play audio in Streamlit
     except Exception as e:
         st.error(f"English TTS failed: {e}")
     
-    st.markdown(f"**Answer:** {answer}")
+    st.markdown(f"**Answer:** {answer}")  # Display answer in text
     return answer
 
 
 def speak_sinhala(answer):
     """Sinhala text + voice only (translated using GPT)."""
-    sinhala_text = translate_to_sinhala_with_gpt(answer)
+    sinhala_text = translate_to_sinhala_with_gpt(answer)  # Translate answer first
 
     try:
         # Shorten long Sinhala text (gTTS crashes on >5000 chars)
@@ -111,11 +114,12 @@ def speak_sinhala(answer):
     except Exception as e:
         st.error(f"Sinhala TTS failed: {e}")
 
-    st.markdown(f"**පිළිතුර:** {sinhala_text}")
+    st.markdown(f"**පිළිතුර:** {sinhala_text}")  # Display Sinhala answer
     return sinhala_text
 
 
 # ===================== USER INPUT HANDLING =====================
+# Function to manage user input, ask the model, and generate voice
 
 def handle_user_input(user_question, voice_choice="English"):
     """Handle user question with conversational chain + voice output."""
@@ -123,7 +127,7 @@ def handle_user_input(user_question, voice_choice="English"):
         "question": user_question,
         "chat_history": st.session_state.chat_history or []
     })
-    st.session_state.chat_history = response["chat_history"]
+    st.session_state.chat_history = response["chat_history"]  # Update chat history
     answer = response["answer"]
 
     # Voice + text response based on choice
@@ -140,13 +144,14 @@ def handle_user_input(user_question, voice_choice="English"):
 
 
 # ===================== STREAMLIT APP =====================
+# Main Streamlit UI code
 
 def main():
     """Main Streamlit app."""
     load_dotenv()  
     st.set_page_config(page_title="Chat Bot PDF Reader", page_icon="📚", layout="wide")
 
-    # Header
+    # Header section
     st.markdown(
         """
         <h1 style='text-align: center; color: #4B8BBE;'>
@@ -159,15 +164,15 @@ def main():
         unsafe_allow_html=True
     )
 
-    # Init session states
+    # Init session states to store conversation, chat history, and display
     if "conversation" not in st.session_state:
         st.session_state.conversation = None
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
-    if "history_display" not in st.session_state:   # For nice chat history display
+    if "history_display" not in st.session_state:
         st.session_state.history_display = []
 
-    # Sidebar + Main Layout
+    # Sidebar + Main Layout columns
     sidebar_col, main_col = st.columns([1, 3])
 
     # ------------------ SIDEBAR ------------------
@@ -181,7 +186,7 @@ def main():
                     text_chunks = get_chunks(raw_text)         
                     vector_store = get_vector_store(text_chunks)  
                     st.session_state.conversation = get_conversation_chain(vector_store)
-                    st.session_state.history_display = []   # reset history on new PDFs
+                    st.session_state.history_display = []   # Reset history when new PDFs are uploaded
                     st.success("✅ PDFs processed successfully!")
             else:
                 st.warning("Please upload at least one PDF file.")
@@ -197,6 +202,7 @@ def main():
             with st.spinner("Fetching response..."):
                 handle_user_input(user_question, voice_choice)
 
+        # Display chat history
         if st.session_state.history_display:
             st.subheader("📝 Chat History")
             for i, (role, msg) in enumerate(st.session_state.history_display):
