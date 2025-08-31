@@ -11,3 +11,5 @@ langchain_community
 sentence-transformers
 faiss-cpu
 langchain-groq
+gTTS
+googletrans==4.0.0-rc1

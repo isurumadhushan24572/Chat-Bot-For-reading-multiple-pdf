@@ -135,7 +135,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-chatbot-env/
+chatbot-pdf/
 # my project’s virtual‑env
 
 
