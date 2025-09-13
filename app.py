@@ -9,6 +9,7 @@ from langchain.memory import ConversationBufferMemory            # Store chat hi
 from langchain.chains import ConversationalRetrievalChain        # Conversational retrieval chain
 from langchain_groq import ChatGroq                              # Groq LLM model
 from langchain.chat_models import ChatOpenAI                     # OpenAI GPT models
+from langchain.prompts import PromptTemplate                     # FIX: Needed for system prompt
 from gtts import gTTS                                            # Google Text-to-Speech for voice output
 import tempfile                                                  # Save temporary audio files for playback
 
@@ -31,8 +32,8 @@ def get_chunks(text):
     """Split extracted text into manageable overlapping chunks."""
     text_splitter = CharacterTextSplitter(
         separator="\n",
-        chunk_size=1000,  # Maximum characters per chunk
-        chunk_overlap=100, # Overlap between chunks for better context
+        chunk_size=1500,   # Increased for more context
+        chunk_overlap=200, # Overlap for better continuity
         length_function=len
     )
     return text_splitter.split_text(text)
@@ -53,14 +54,32 @@ def get_vector_store(text_chunks):
 
 def get_conversation_chain(vector_store):
     """Build a conversational retrieval chain using Groq LLM (or OpenAI)."""
-    llm_1 = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)  # OpenAI option
-    # llm = ChatGroq(model="llama-3.1-8b-instant",temperature = 0)    # Define llm model
+    llm_1 = ChatOpenAI(model="gpt-4", temperature=0)  # OpenAI option
+    # llm_1 = ChatGroq(model="llama-3.1-8b-instant", temperature=0)  # Groq option
+
+    # FIX: Use PromptTemplate instead of plain string
+    system_prompt = PromptTemplate(
+        input_variables=["context", "question"],
+        template="""
+        You are a helpful assistant. 
+        Answer the question ONLY using the provided PDF context. 
+        If the answer is not in the PDF, reply: 'I could not find the answer in the document.'
+        
+        Context: {context}
+        Question: {question}
+        """
+    )
 
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)  # Save chat history
+    
     return ConversationalRetrievalChain.from_llm(
         llm=llm_1,
-        retriever=vector_store.as_retriever(),  # Connect vector store as retriever
-        memory=memory
+        retriever=vector_store.as_retriever(
+            search_type="mmr",      # Maximal Marginal Relevance (avoids redundancy)
+            search_kwargs={"k": 10}  # return top 10
+        ),  # Connect vector store as retriever
+        memory=memory,
+        combine_docs_chain_kwargs={"prompt": system_prompt}  # FIX: now valid prompt
     )
 
 
@@ -76,16 +95,15 @@ def translate_to_sinhala_with_gpt(answer: str) -> str:
                             And provide only answer without any additional information with a more summarized version.
                             \n\n{answer}""")
     
-    # Extract response content
-    if hasattr(response, "content"):
-        return response.content.strip()
-    elif isinstance(response, str):
-        return response.strip()
-    return str(response)
+    # FIX: Simpler, safe handling
+    return response.content.strip() if response else ""
 
 
 def speak_english(answer):
     """English text + voice only."""
+    if not answer.strip():  # FIX: Prevent gTTS crash on empty answer
+        st.warning("No valid answer found for TTS.")
+        return answer
     try:
         tts = gTTS(text=answer, lang="en", slow=False)   # Convert text to speech
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_file:
@@ -101,6 +119,10 @@ def speak_english(answer):
 def speak_sinhala(answer):
     """Sinhala text + voice only (translated using GPT)."""
     sinhala_text = translate_to_sinhala_with_gpt(answer)  # Translate answer first
+
+    if not sinhala_text.strip():  # FIX: Prevent gTTS crash on empty translation
+        st.warning("No valid Sinhala answer found for TTS.")
+        return sinhala_text
 
     try:
         # Shorten long Sinhala text (gTTS crashes on >5000 chars)
@@ -186,7 +208,8 @@ def main():
                     text_chunks = get_chunks(raw_text)         
                     vector_store = get_vector_store(text_chunks)  
                     st.session_state.conversation = get_conversation_chain(vector_store)
-                    st.session_state.history_display = []   # Reset history when new PDFs are uploaded
+                    st.session_state.chat_history = []     # FIX: reset chat history
+                    st.session_state.history_display = []  # Reset history when new PDFs are uploaded
                     st.success("✅ PDFs processed successfully!")
             else:
                 st.warning("Please upload at least one PDF file.")
