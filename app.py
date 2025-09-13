@@ -81,7 +81,7 @@ def get_conversation_chain(vector_store):
         llm=llm_1,
         retriever=vector_store.as_retriever(
             search_type="mmr",      # Maximal Marginal Relevance (avoids redundancy)
-            search_kwargs={"k": 3}  # return top 3
+            search_kwargs={"k": 5}  # return top 5 relevant chunks
         ),  # Connect vector store as retriever
         memory=memory,
         combine_docs_chain_kwargs={"prompt": system_prompt}  # FIX: now valid prompt
