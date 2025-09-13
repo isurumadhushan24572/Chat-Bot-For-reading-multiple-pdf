@@ -94,10 +94,7 @@ def get_conversation_chain(vector_store):
 def translate_to_sinhala_with_gpt(answer: str) -> str:
     """Use OpenAI GPT model for Sinhala translation."""
     llm_2 = ChatOpenAI(model="gpt-4", temperature=0)
-    response = llm_2.invoke(f"""Translate the following English text into natural Sinhala :
-                            Also, make sure the translation is suitable for text-to-speech synthesis.
-                            And avoid transliteration; use proper Sinhala script.
-                            And provide only answer without any additional information with a more summarized version.
+    response = llm_2.invoke(f"""Translate the following English text into Sinhala :.
                             \n\n{answer}""")
     
     # FIX: Simpler, safe handling
