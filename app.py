@@ -2,7 +2,7 @@ import torch                                    # PyTorch for GPU/CPU detection
 import streamlit as st                          # Streamlit GUI framework
 from dotenv import load_dotenv                  # Load environment variables from .env file
 from PyPDF2 import PdfReader                    # Read text from PDF documents
-from langchain.text_splitter import CharacterTextSplitter        # Split large text into chunks
+from langchain.text_splitter import RecursiveCharacterTextSplitter        # Split large text into chunks
 from langchain_community.vectorstores import FAISS               # Vector DB for text retrieval
 from langchain_community.embeddings import HuggingFaceEmbeddings # Convert text chunks to embeddings
 from langchain.memory import ConversationBufferMemory            # Store chat history
@@ -12,6 +12,7 @@ from langchain.chat_models import ChatOpenAI                     # OpenAI GPT mo
 from langchain.prompts import PromptTemplate                     # FIX: Needed for system prompt
 from gtts import gTTS                                            # Google Text-to-Speech for voice output
 import tempfile                                                  # Save temporary audio files for playback
+import re                                                        # Regular expressions for text cleaning
 
 
 
@@ -24,18 +25,21 @@ def get_pdf_text(pdf_docs):
     for pdf in pdf_docs:
         pdf_doc = PdfReader(pdf)  
         for page in pdf_doc.pages:  
-            raw_text += page.extract_text() or ""  # Add text from each page
-    return raw_text          
+            page_text = page.extract_text() or ""
+            page_text = re.sub(r"[^\S\r\n]+", " ", page_text)  # replace spaces/tabs but keep \n
+            raw_text += page_text + " "
+    return raw_text  
 
-
+     
 def get_chunks(text):
     """Split extracted text into manageable overlapping chunks."""
-    text_splitter = CharacterTextSplitter(
-        separator="\n",
-        chunk_size=1500,   # Increased for more context
-        chunk_overlap=200, # Overlap for better continuity
-        length_function=len
+    text_splitter = RecursiveCharacterTextSplitter(
+    separators=["\n\n", "\n", ".", " "],
+    chunk_size=1600,
+    chunk_overlap=250,
+    length_function=len
     )
+
     return text_splitter.split_text(text)
 
 
@@ -61,9 +65,10 @@ def get_conversation_chain(vector_store):
     system_prompt = PromptTemplate(
         input_variables=["context", "question"],
         template="""
-        You are a helpful assistant. 
-        Answer the question ONLY using the provided PDF context. 
-        If the answer is not in the PDF, reply: 'I could not find the answer in the document.'
+        You are a helpful assistant for extracting information from a PDF.
+        Answer the question using only the provided PDF content.
+        Provide only the answer in a concise and summarized manner.
+        If the answer is not present in the PDF, reply: 'I could not find the answer in the document.'
         
         Context: {context}
         Question: {question}
@@ -76,7 +81,7 @@ def get_conversation_chain(vector_store):
         llm=llm_1,
         retriever=vector_store.as_retriever(
             search_type="mmr",      # Maximal Marginal Relevance (avoids redundancy)
-            search_kwargs={"k": 10}  # return top 10
+            search_kwargs={"k": 3}  # return top 3
         ),  # Connect vector store as retriever
         memory=memory,
         combine_docs_chain_kwargs={"prompt": system_prompt}  # FIX: now valid prompt
@@ -88,7 +93,7 @@ def get_conversation_chain(vector_store):
 
 def translate_to_sinhala_with_gpt(answer: str) -> str:
     """Use OpenAI GPT model for Sinhala translation."""
-    llm_2 = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    llm_2 = ChatOpenAI(model="gpt-4", temperature=0)
     response = llm_2.invoke(f"""Translate the following English text into natural Sinhala :
                             Also, make sure the translation is suitable for text-to-speech synthesis.
                             And avoid transliteration; use proper Sinhala script.

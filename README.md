@@ -4,7 +4,7 @@ An intelligent chatbot that extracts instructions from multiple PDF files and pr
 
 ## 🚀 Features  
 - **Multi-PDF Support**: Handles multiple PDFs to provide comprehensive responses.  
-- **GPT-Powered**: Uses OpenAI's `gpt-3.5-turbo` model for natural and context-aware interactions.  
+- **GPT-Powered**: Uses OpenAI's `gpt-4` model for natural and context-aware interactions.  
 - **Embeddings with HuggingFace**: Incorporates `sentence-transformers/all-MiniLM-L6-v2` for robust text embedding.  
 - **Chat History**: Conversation history managed seamlessly using `ConversationBufferMemory`.  
 - **Vector Store**: Efficiently retrieves data using `FAISS`.  

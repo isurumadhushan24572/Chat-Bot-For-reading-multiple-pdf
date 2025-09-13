@@ -175,3 +175,7 @@ cython_debug/
 .ruff_cache/
 
 .devcontainer/devcontainer.json
+
+auto_eval_data.json
+
+faiss_index
