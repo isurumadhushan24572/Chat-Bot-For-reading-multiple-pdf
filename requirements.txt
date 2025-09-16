@@ -1,0 +1,16 @@
+streamlit
+python-dotenv
+PyPDF2
+gTTS
+openai
+langchain
+langchain_community
+langchain-groq
+huggingface_hub
+torch
+sentence-transformers
+faiss-cpu
+bert_score
+hf_xet
+word2number
+nltk
