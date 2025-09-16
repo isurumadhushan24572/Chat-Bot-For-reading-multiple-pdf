@@ -176,8 +176,6 @@ cython_debug/
 
 .devcontainer/devcontainer.json
 
-auto_eval_data.json
-
 faiss_index
 
 NLP Coursework.pdf
